@@ -1,0 +1,58 @@
+# SQL 风险策略
+# 三级：low（自动执行）/ high（HITL挂起）/ forbidden（直接拒绝）
+
+# 禁止访问的表（无论什么角色）
+forbidden_tables:
+  - pg_catalog
+  - information_schema
+  - pg_shadow
+
+# 敏感表（必须人工审批）
+sensitive_tables:
+  - employees.salary    # 员工工资
+  - users.phone         # 用户手机
+  - users.password      # 用户密码
+
+# 风险规则
+rules:
+  # 高风险：全表扫描（无 WHERE）
+  full_table_scan:
+    risk: high
+    reason: "无 WHERE 条件的全表查询"
+    condition: "no_where_clause AND no_aggregation"
+
+  # 高风险：跨 3 张以上表
+  multi_table_join:
+    risk: high
+    reason: "涉及 3 张及以上表的 JOIN"
+    condition: "join_count >= 3"
+
+  # 高风险：访问敏感表
+  sensitive_access:
+    risk: high
+    reason: "访问敏感表"
+    condition: "tables ∩ sensitive_tables != empty"
+
+  # 中风险：结果行数超过阈值
+  large_result:
+    risk: high
+    reason: "预估返回行数超过 5000"
+    condition: "estimated_rows > 5000"
+
+  # 低风险：单表 + 有 WHERE
+  simple_query:
+    risk: low
+    reason: "常规查询"
+    condition: "default"
+
+# 用户角色与行级权限（RLS）
+role_permissions:
+  admin:
+    accessible_regions: "*"           # 全部区域
+    can_view_sensitive: true
+  manager:
+    accessible_regions: ["华东", "华南", "华北"]  # 三大区
+    can_view_sensitive: false
+  analyst:
+    accessible_regions: ["华东", "华南"]          # 两个大区
+    can_view_sensitive: false

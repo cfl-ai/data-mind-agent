@@ -1,0 +1,31 @@
+# 语义层：预定义指标和维度，避免 LLM 自由发挥口径
+metrics:
+  - name: 销售额
+    sql: "SUM(o.total_amount)"
+    table: "orders o"
+    filters: "o.status = '已完成'"
+    description: "只统计已完成订单"
+
+  - name: 客单价
+    sql: "SUM(o.total_amount) / COUNT(DISTINCT o.id)"
+    table: "orders o"
+    filters: "o.status = '已完成'"
+
+  - name: 订单量
+    sql: "COUNT(*)"
+    table: "orders o"
+
+dimensions:
+  - name: 区域
+    sql: "r.name"
+    table: "regions r"
+    join: "o.region_id = r.id"
+
+  - name: 月份
+    sql: "DATE_TRUNC('month', o.order_date)"
+    table: "orders o"
+
+  - name: 品类
+    sql: "c.name"
+    table: "categories c"
+    join: "p.category_id = c.id"

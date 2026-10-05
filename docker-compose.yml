@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: datamind-pg
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: datamind2026
+      POSTGRES_DB: datamind
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: datamind-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  datamind:
+    build: .
+    container_name: datamind-app
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - ZAI_API_KEY=${ZAI_API_KEY}
+      - DATABASE_URL=postgresql://postgres:datamind2026@postgres:5432/datamind
+      - REDIS_URL=redis://redis:6379/0
+      - GRAPH_PATH=/app/data/graph/knowledge_graph.json
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  pgdata:
+  
